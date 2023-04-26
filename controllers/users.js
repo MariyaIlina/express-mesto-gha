@@ -100,30 +100,6 @@ const updateUser = (req, res) => {
       }
     });
 };
-// const updateUser = (req, res) => {
-//   const { _id } = req.user;
-//   const { name, about } = req.body;
-
-//   User.findByIdAndUpdate(_id, { name, about }, { new: true })
-//     .orFail(() => {
-//       throw new Error('Not found');
-//     })
-//     .then((user) => {
-//       res.send({ data: user });
-//     })
-//     .catch((e) => {
-//       if (e.message === 'Not found') {
-//         res.status(404).send({ message: 'User not found' });
-//       } else if (e.name === 'ValidationError') {
-//         const message = Object.values(e.errors)
-//           .map((error) => error.message)
-//           .join('; ');
-//         res.status(400).send({ message });
-//       } else {
-//         res.status(500).send({ message: 'Smth went wrong' });
-//       }
-//     });
-// };
 
 const updateAvatar = (req, res) => {
   const { _id } = req.user;

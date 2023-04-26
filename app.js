@@ -17,7 +17,7 @@ app.use(userRouter);
 app.use(cardRouter);
 
 app.use('*', (req, res) => {
-  res.status(400).send({ message: 'Такая страница не существует' });
+  res.status(404).send({ message: 'Такая страница не существует' });
 });
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {

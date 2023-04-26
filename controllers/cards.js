@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Card = require('../models/cards');
 
 const getCards = (req, res) => {
@@ -48,19 +49,34 @@ const deleteCard = (req, res) => {
 };
 
 const likeCard = (req, res) => {
-  Card.findByIdAndUpdate(
-    req.params.cardId,
-    { $addToSet: { likes: req.user._id } },
-    { new: true },
-  )
+  if (!mongoose.Types.ObjectId.isValid(req.params.cardId)) {
+    res.status(400).send({ message: 'Invalid card id' });
+    return;
+  }
+
+  Card.findById(req.params.cardId)
     .orFail(() => {
-      throw new Error('Not found');
+      throw new Error('Card not found');
     })
-    .then((card) => {
-      res.send({ data: card });
+    .then(() => {
+      Card.findByIdAndUpdate(
+        req.params.cardId,
+        { $addToSet: { likes: req.user._id } },
+        { new: true },
+      )
+        .then((card) => {
+          res.send({ data: card });
+        })
+        .catch((e) => {
+          if (e.message === 'Not found') {
+            res.status(404).send({ message: 'Card not found' });
+          } else {
+            res.status(500).send({ message: 'Smth went wrong' });
+          }
+        });
     })
     .catch((e) => {
-      if (e.message === 'Not found') {
+      if (e.message === 'Card not found') {
         res.status(404).send({ message: 'Card not found' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
@@ -69,19 +85,34 @@ const likeCard = (req, res) => {
 };
 
 const dislikeCard = (req, res) => {
-  Card.findByIdAndUpdate(
-    req.params.cardId,
-    { $pull: { likes: req.user._id } },
-    { new: true },
-  )
+  if (!mongoose.Types.ObjectId.isValid(req.params.cardId)) {
+    res.status(400).send({ message: 'Invalid card id' });
+    return;
+  }
+
+  Card.findById(req.params.cardId)
     .orFail(() => {
-      throw new Error('Not found');
+      throw new Error('Card not found');
     })
-    .then((card) => {
-      res.send({ data: card });
+    .then(() => {
+      Card.findByIdAndUpdate(
+        req.params.cardId,
+        { $pull: { likes: req.user._id } },
+        { new: true },
+      )
+        .then((card) => {
+          res.send({ data: card });
+        })
+        .catch((e) => {
+          if (e.message === 'Not found') {
+            res.status(404).send({ message: 'Card not found' });
+          } else {
+            res.status(500).send({ message: 'Smth went wrong' });
+          }
+        });
     })
     .catch((e) => {
-      if (e.message === 'Not found') {
+      if (e.message === 'Card not found') {
         res.status(404).send({ message: 'Card not found' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
