@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "npx eslint ..",
     "dev": "nodemon app.js",
-    "start": "PORT=3005 node app.js"
+    "start": "PORT=3000 node app.js"
   },
   "repository": {
     "type": "git",
@@ -29,7 +29,8 @@
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "nodemon": "^2.0.22"
+    "nodemon": "^2.0.22",
+    "eslint-config-airbnb-base": "^14.2.1"
   },
   "dependencies": {
     "express": "^4.18.2",
