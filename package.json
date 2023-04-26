@@ -1,0 +1,39 @@
+{
+  "name": "express-mesto-gha",
+  "version": "1.0.0",
+  "description": "[![Tests](../../actions/workflows/tests-13-sprint.yml/badge.svg)](../../actions/workflows/tests-13-sprint.yml) [![Tests](../../actions/workflows/tests-14-sprint.yml/badge.svg)](../../actions/workflows/tests-14-sprint.yml)\r # Проект Mesto фронтенд + бэкенд",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "npx eslint ..",
+    "dev": "nodemon app.js",
+    "start": "PORT=3005 node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MariyaIlina/express-mesto-gha.git"
+  },
+  "author": "Mariya Ilina",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MariyaIlina/express-mesto-gha/issues"
+  },
+  "homepage": "https://github.com/MariyaIlina/express-mesto-gha#readme",
+  "devDependencies": {
+    "eslint": "^8.38.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-jsx-a11y": "^6.7.1",
+    "eslint-plugin-n": "^15.7.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "nodemon": "^2.0.22"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.0.4",
+    "mongoose-autopopulate": "^1.0.0"
+  }
+}
