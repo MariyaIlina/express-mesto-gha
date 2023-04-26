@@ -54,9 +54,33 @@ const createUser = (req, res) => {
 
 const updateUser = (req, res) => {
   const { _id } = req.user;
-  const { name, about } = req.body;
+  let { name, about } = req.body;
 
-  User.findByIdAndUpdate(_id, { name, about }, { new: true })
+  if (name && (name.length < 2 || name.length > 30)) {
+    return res.status(400).send({ message: 'Name should be between 2 and 30 characters long' });
+  }
+
+  if (about && (about.length < 2 || about.length > 30)) {
+    return res.status(400).send({ message: 'About should be between 2 and 30 characters long' });
+  }
+
+  const options = { new: true, omitUndefined: true };
+
+  if (name === null) {
+    name = undefined;
+  }
+  if (about === null) {
+    about = undefined;
+  }
+
+  if ((!name || name.length < 2 || name.length > 30) &&
+     (!about || about.length < 2 || about.length > 30)) {
+    return res.status(400).send({
+      message: 'Name or About should be provided, and be between 2 and 30 characters long',
+    });
+  }
+
+  User.findByIdAndUpdate(_id, { name, about }, options)
     .orFail(() => {
       throw new Error('Not found');
     })
@@ -76,6 +100,30 @@ const updateUser = (req, res) => {
       }
     });
 };
+// const updateUser = (req, res) => {
+//   const { _id } = req.user;
+//   const { name, about } = req.body;
+
+//   User.findByIdAndUpdate(_id, { name, about }, { new: true })
+//     .orFail(() => {
+//       throw new Error('Not found');
+//     })
+//     .then((user) => {
+//       res.send({ data: user });
+//     })
+//     .catch((e) => {
+//       if (e.message === 'Not found') {
+//         res.status(404).send({ message: 'User not found' });
+//       } else if (e.name === 'ValidationError') {
+//         const message = Object.values(e.errors)
+//           .map((error) => error.message)
+//           .join('; ');
+//         res.status(400).send({ message });
+//       } else {
+//         res.status(500).send({ message: 'Smth went wrong' });
+//       }
+//     });
+// };
 
 const updateAvatar = (req, res) => {
   const { _id } = req.user;
