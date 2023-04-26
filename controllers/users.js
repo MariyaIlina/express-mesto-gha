@@ -20,10 +20,14 @@ const getUser = (req, res) => {
       res.send({ data: user });
     })
     .catch((e) => {
-      if (e.message === 'Not found') {
-        res.status(400).send({ message: 'User not found' });
-      } else {
-        res.status(500).send({ message: 'Smth went wrong' });
+      try {
+        if (e.message === 'Not found') {
+          res.status(404).send({ message: 'User not found' });
+        } else {
+          res.status(400).send({ message: 'Smth went wrong' });
+        }
+      } catch (error) {
+        res.status(500).send({ message: 'Internal server error' });
       }
     });
 };
