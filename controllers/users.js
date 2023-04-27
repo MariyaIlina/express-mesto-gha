@@ -20,13 +20,11 @@ const getUser = (req, res) => {
       res.send({ data: user });
     })
     .catch((e) => {
-      try {
-        if (e.message === 'Not found') {
-          res.status(404).send({ message: 'User not found' });
-        } else {
-          res.status(400).send({ message: 'Smth went wrong' });
-        }
-      } catch (error) {
+      if (e.message === 'Not found') {
+        res.status(404).send({ message: 'User not found' });
+      } else if (e.name === 'CastError') {
+        res.status(400).send({ message: 'Smth went wrong' });
+      } else {
         res.status(500).send({ message: 'Internal server error' });
       }
     });
@@ -40,7 +38,6 @@ const createUser = (req, res) => {
       res.status(201).send({ data: user });
     })
     .catch((e) => {
-      console.log('e => ', e.errors);
       if (e.name === 'ValidationError') {
         const message = Object.values(e.errors)
           .map((error) => error.message)
@@ -54,30 +51,28 @@ const createUser = (req, res) => {
 
 const updateUser = (req, res) => {
   const { _id } = req.user;
-  let { name, about } = req.body;
+  const { name, about } = req.body;
 
   if (name && (name.length < 2 || name.length > 30)) {
-    return res.status(400).send({ message: 'Name should be between 2 and 30 characters long' });
+    res.status(400)
+      .send({ message: 'Name should be between 2 and 30 characters long' });
+    return;
   }
 
   if (about && (about.length < 2 || about.length > 30)) {
-    return res.status(400).send({ message: 'About should be between 2 and 30 characters long' });
+    res.status(400)
+      .send({ message: 'About should be between 2 and 30 characters long' });
+    return;
   }
 
-  const options = { new: true, omitUndefined: true };
+  const options = { new: true, omitUndefined: true, runValidators: true };
 
-  if (name === null) {
-    name = undefined;
-  }
-  if (about === null) {
-    about = undefined;
-  }
-
-  if ((!name || name.length < 2 || name.length > 30) &&
-     (!about || about.length < 2 || about.length > 30)) {
-    return res.status(400).send({
+  if ((!name || name.length < 2 || name.length > 30)
+  && (!about || about.length < 2 || about.length > 30)) {
+    res.status(400).send({
       message: 'Name or About should be provided, and be between 2 and 30 characters long',
     });
+    return;
   }
 
   User.findByIdAndUpdate(_id, { name, about }, options)
@@ -88,7 +83,7 @@ const updateUser = (req, res) => {
       res.send({ data: user });
     })
     .catch((e) => {
-      if (e.message === 'Not found') {
+      if (e.name === 'CastError') {
         res.status(404).send({ message: 'User not found' });
       } else if (e.name === 'ValidationError') {
         const message = Object.values(e.errors)
@@ -113,7 +108,7 @@ const updateAvatar = (req, res) => {
       res.send({ data: user });
     })
     .catch((e) => {
-      if (e.message === 'Not found') {
+      if (e.name === 'CastError') {
         res.status(404).send({ message: 'User not found' });
       } else if (e.name === 'ValidationError') {
         const message = Object.values(e.errors)

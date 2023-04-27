@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
 const Card = require('../models/cards');
 
 const getCards = (req, res) => {
   Card.find()
+    .populate('owner')
     .then((cards) => {
       res.send({ data: cards });
     })
@@ -12,14 +12,13 @@ const getCards = (req, res) => {
 };
 
 const createCard = (req, res) => {
-  console.log('req.user._id=>', req.user._id);
   const { name, link } = req.body;
 
-  Card.create({ name, link }).then((card) => {
-    res.status(201).send({ data: card });
-  })
+  Card.create({ name, link })
+    .then((card) => {
+      res.status(201).send({ data: card });
+    })
     .catch((e) => {
-      console.log('e => ', e.errors);
       if (e.name === 'ValidationError') {
         const message = Object.values(e.errors)
           .map((error) => error.message)
@@ -33,14 +32,16 @@ const createCard = (req, res) => {
 const deleteCard = (req, res) => {
   const { cardId } = req.params;
   Card.findByIdAndRemove(cardId)
-    .then((card) => {
-      if (!card) {
-        return res.status(404).send({ message: 'Card not found' });
-      }
-      return res.send({ data: card });
+    .orFail(() => {
+      throw new Error('CastError');
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
+    .then((card) => {
+      res.send({ data: card });
+    })
+    .catch((e) => {
+      if (e.name === 'CastError') {
+        res.status(404).send({ message: 'Card not found' });
+      } else if (e.name === 'Not found') {
         res.status(400).send({ message: 'Invalid Id' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
@@ -49,34 +50,21 @@ const deleteCard = (req, res) => {
 };
 
 const likeCard = (req, res) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.cardId)) {
-    res.status(400).send({ message: 'Invalid card id' });
-    return;
-  }
-
-  Card.findById(req.params.cardId)
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $addToSet: { likes: req.user._id } },
+    { new: true },
+  )
     .orFail(() => {
-      throw new Error('Card not found');
+      throw new Error('CastError');
     })
-    .then(() => {
-      Card.findByIdAndUpdate(
-        req.params.cardId,
-        { $addToSet: { likes: req.user._id } },
-        { new: true },
-      )
-        .then((card) => {
-          res.send({ data: card });
-        })
-        .catch((e) => {
-          if (e.message === 'Not found') {
-            res.status(404).send({ message: 'Card not found' });
-          } else {
-            res.status(500).send({ message: 'Smth went wrong' });
-          }
-        });
+    .then((card) => {
+      res.send({ data: card });
     })
     .catch((e) => {
-      if (e.message === 'Card not found') {
+      if (e.message === 'CastError') {
+        res.status(400).send({ message: 'Invalid card id' });
+      } else if (e.message === 'Card not found') {
         res.status(404).send({ message: 'Card not found' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
@@ -85,34 +73,21 @@ const likeCard = (req, res) => {
 };
 
 const dislikeCard = (req, res) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.cardId)) {
-    res.status(400).send({ message: 'Invalid card id' });
-    return;
-  }
-
-  Card.findById(req.params.cardId)
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $pull: { likes: req.user._id } },
+    { new: true },
+  )
     .orFail(() => {
       throw new Error('Card not found');
     })
-    .then(() => {
-      Card.findByIdAndUpdate(
-        req.params.cardId,
-        { $pull: { likes: req.user._id } },
-        { new: true },
-      )
-        .then((card) => {
-          res.send({ data: card });
-        })
-        .catch((e) => {
-          if (e.message === 'Not found') {
-            res.status(404).send({ message: 'Card not found' });
-          } else {
-            res.status(500).send({ message: 'Smth went wrong' });
-          }
-        });
+    .then((card) => {
+      res.send({ data: card });
     })
     .catch((e) => {
-      if (e.message === 'Card not found') {
+      if (e.message === 'CastError') {
+        res.status(400).send({ message: 'Invalid card id' });
+      } else if (e.message === 'Card not found') {
         res.status(404).send({ message: 'Card not found' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
