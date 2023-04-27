@@ -49,8 +49,9 @@ const deleteCard = (req, res) => {
 };
 
 const likeCard = (req, res) => {
+  const { cardId } = req.params;
   Card.findByIdAndUpdate(
-    req.params.cardId,
+    cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
@@ -61,9 +62,9 @@ const likeCard = (req, res) => {
       res.send({ data: card });
     })
     .catch((e) => {
-      if (e.message === 'CastError') {
+      if (e.name === 'CastError' && e.kind === 'ObjectId') {
         res.status(400).send({ message: 'Invalid card id' });
-      } else if (e.message === 'Card not found') {
+      } else if (e.name === 'Card not found') {
         res.status(404).send({ message: 'Card not found' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
@@ -84,9 +85,9 @@ const dislikeCard = (req, res) => {
       res.send({ data: card });
     })
     .catch((e) => {
-      if (e.message === 'CastError') {
+      if (e.name === 'CastError') {
         res.status(400).send({ message: 'Invalid card id' });
-      } else if (e.message === 'Card not found') {
+      } else if (e.name === 'Card not found') {
         res.status(404).send({ message: 'Card not found' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
