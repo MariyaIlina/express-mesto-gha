@@ -88,11 +88,6 @@ const dislikeCard = async (req, res) => {
     ).orFail(() => {
       throw new Error('CastError');
     });
-    const likeIndex = card.likes.findIndex((like) => like.toString() === req.user._id);
-    if (likeIndex === -1) {
-      res.status(404).send({ message: 'Like not found' });
-      return;
-    }
     res.send({ data: card });
   } catch (err) {
     if (err.name === 'CastError') {
