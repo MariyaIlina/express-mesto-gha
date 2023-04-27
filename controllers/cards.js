@@ -32,17 +32,16 @@ const createCard = (req, res) => {
 const deleteCard = (req, res) => {
   const { cardId } = req.params;
   Card.findByIdAndRemove(cardId)
-    .orFail(() => {
-      throw new Error('CastError');
-    })
     .then((card) => {
-      res.send({ data: card });
+      if (!card) {
+        res.status(404).send({ message: 'Card not found' });
+      } else {
+        res.send({ data: card });
+      }
     })
     .catch((e) => {
       if (e.name === 'CastError') {
-        res.status(404).send({ message: 'Card not found' });
-      } else if (e.name === 'Not found') {
-        res.status(400).send({ message: 'Invalid Id' });
+        res.status(400).send({ message: 'Invalid card id' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
       }
