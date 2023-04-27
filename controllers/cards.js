@@ -48,51 +48,59 @@ const deleteCard = (req, res) => {
     });
 };
 
-const likeCard = (req, res) => {
+const likeCard = async (req, res) => {
   const { cardId } = req.params;
-  Card.findByIdAndUpdate(
-    cardId,
-    { $addToSet: { likes: req.user._id } },
-    { new: true },
-  )
-    .orFail(() => {
+  try {
+    const cardExist = await Card.exists({ _id: cardId });
+    if (!cardExist) {
+      res.status(404).send({ message: 'Card not found' });
+      return;
+    }
+    const card = await Card.findByIdAndUpdate(
+      cardId,
+      { $addToSet: { likes: req.user._id } },
+      { new: true },
+    ).orFail(() => {
       throw new Error('CastError');
-    })
-    .then((card) => {
-      res.send({ data: card });
-    })
-    .catch((e) => {
-      if (e.name === 'CastError' && e.kind === 'ObjectId') {
-        res.status(400).send({ message: 'Invalid card id' });
-      } else if (e.name === 'Card not found') {
-        res.status(404).send({ message: 'Card not found' });
-      } else {
-        res.status(500).send({ message: 'Smth went wrong' });
-      }
     });
+    res.send({ data: card });
+  } catch (err) {
+    if (err.name === 'CastError') {
+      res.status(400).send({ message: 'Invalid card id' });
+    } else {
+      res.status(500).send({ message: 'Something went wrong' });
+    }
+  }
 };
 
-const dislikeCard = (req, res) => {
-  Card.findByIdAndUpdate(
-    req.params.cardId,
-    { $pull: { likes: req.user._id } },
-    { new: true },
-  )
-    .orFail(() => {
-      throw new Error('Card not found');
-    })
-    .then((card) => {
-      res.send({ data: card });
-    })
-    .catch((e) => {
-      if (e.name === 'CastError') {
-        res.status(400).send({ message: 'Invalid card id' });
-      } else if (e.name === 'Card not found') {
-        res.status(404).send({ message: 'Card not found' });
-      } else {
-        res.status(500).send({ message: 'Smth went wrong' });
-      }
+const dislikeCard = async (req, res) => {
+  const { cardId } = req.params;
+  try {
+    const cardExist = await Card.exists({ _id: cardId });
+    if (!cardExist) {
+      res.status(404).send({ message: 'Card not found' });
+      return;
+    }
+    const card = await Card.findByIdAndUpdate(
+      cardId,
+      { $pull: { likes: req.user._id } },
+      { new: true },
+    ).orFail(() => {
+      throw new Error('CastError');
     });
+    const likeIndex = card.likes.findIndex((like) => like.toString() === req.user._id);
+    if (likeIndex === -1) {
+      res.status(404).send({ message: 'Like not found' });
+      return;
+    }
+    res.send({ data: card });
+  } catch (err) {
+    if (err.name === 'CastError') {
+      res.status(400).send({ message: 'Invalid card id' });
+    } else {
+      res.status(500).send({ message: 'Something went wrong' });
+    }
+  }
 };
 
 module.exports = {
