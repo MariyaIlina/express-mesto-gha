@@ -22,7 +22,9 @@ const userSchema = new mongoose.Schema({
       message: 'Некорректный URL',
     },
   },
-  versionKey: false,
+  versionKey: {
+    strict: false,
+  },
 });
 
 module.exports = mongoose.model('user', userSchema);
