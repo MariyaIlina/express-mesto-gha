@@ -84,12 +84,12 @@ const updateUser = (req, res) => {
     })
     .catch((e) => {
       if (e.name === 'CastError') {
-        res.status(404).send({ message: 'User not found' });
-      } else if (e.name === 'ValidationError') {
+        res.status(400).send({ message: 'ValidationError' });
+      } else if (e.name === 'Not found') {
         const message = Object.values(e.errors)
           .map((error) => error.message)
           .join('; ');
-        res.status(400).send({ message });
+        res.status(404).send({ message });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
       }
@@ -99,8 +99,13 @@ const updateUser = (req, res) => {
 const updateAvatar = (req, res) => {
   const { _id } = req.user;
   const { avatar } = req.body;
+  if (!avatar) {
+    res.status(400).send({ message: 'Avatar URL is required' });
+    return;
+  }
+  const options = { new: true, omitUndefined: true, runValidators: true };
 
-  User.findByIdAndUpdate(_id, { avatar }, { new: true })
+  User.findByIdAndUpdate(_id, { avatar }, { new: true }, options)
     .orFail(() => {
       throw new Error('Not found');
     })
@@ -109,12 +114,12 @@ const updateAvatar = (req, res) => {
     })
     .catch((e) => {
       if (e.name === 'CastError') {
-        res.status(404).send({ message: 'User not found' });
-      } else if (e.name === 'ValidationError') {
+        res.status(400).send({ message: 'ValidationError' });
+      } else if (e.name === 'Not found') {
         const message = Object.values(e.errors)
-          .map((error) => error.message)
+          .map((err) => err.message)
           .join('; ');
-        res.status(400).send({ message });
+        res.status(404).send({ message });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
       }
