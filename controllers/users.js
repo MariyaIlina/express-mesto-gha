@@ -54,23 +54,28 @@ const updateUser = (req, res) => {
   const { name, about } = req.body;
 
   if (name && (name.length < 2 || name.length > 30)) {
-    res.status(400)
+    res
+      .status(400)
       .send({ message: 'Name should be between 2 and 30 characters long' });
     return;
   }
 
   if (about && (about.length < 2 || about.length > 30)) {
-    res.status(400)
+    res
+      .status(400)
       .send({ message: 'About should be between 2 and 30 characters long' });
     return;
   }
 
   const options = { new: true, omitUndefined: true, runValidators: true };
 
-  if ((!name || name.length < 2 || name.length > 30)
-  && (!about || about.length < 2 || about.length > 30)) {
+  if (
+    (!name || name.length < 2 || name.length > 30)
+  && (!about || about.length < 2 || about.length > 30)
+  ) {
     res.status(400).send({
-      message: 'Name or About should be provided, and be between 2 and 30 characters long',
+      message:
+        'Name or About should be provided, and be between 2 and 30 characters long',
     });
     return;
   }
@@ -85,11 +90,13 @@ const updateUser = (req, res) => {
     .catch((e) => {
       if (e.name === 'CastError') {
         res.status(400).send({ message: 'ValidationError' });
-      } else if (e.name === 'Not found') {
+      } else if (e.name === 'ValidationError') {
         const message = Object.values(e.errors)
-          .map((error) => error.message)
+          .map((err) => err.message)
           .join('; ');
         res.status(404).send({ message });
+      } else if (e.message === 'Not found') {
+        res.status(404).send({ message: 'Not found' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
       }
@@ -105,7 +112,7 @@ const updateAvatar = (req, res) => {
   }
   const options = { new: true, omitUndefined: true, runValidators: true };
 
-  User.findByIdAndUpdate(_id, { avatar }, { new: true }, options)
+  User.findByIdAndUpdate(_id, { avatar }, options)
     .orFail(() => {
       throw new Error('Not found');
     })
@@ -115,11 +122,13 @@ const updateAvatar = (req, res) => {
     .catch((e) => {
       if (e.name === 'CastError') {
         res.status(400).send({ message: 'ValidationError' });
-      } else if (e.name === 'Not found') {
+      } else if (e.name === 'ValidationError') {
         const message = Object.values(e.errors)
           .map((err) => err.message)
           .join('; ');
         res.status(404).send({ message });
+      } else if (e.message === 'Not found') {
+        res.status(404).send({ message: 'Not found' });
       } else {
         res.status(500).send({ message: 'Smth went wrong' });
       }
