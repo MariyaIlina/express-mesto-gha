@@ -1,5 +1,4 @@
 const express = require('express');
-// const { celebrate, Joi } = require('celebrate');
 
 const userRouter = express.Router();
 const {
@@ -9,11 +8,12 @@ const {
   updateAvatar,
   getUserMe,
 } = require('../controllers/users');
+const { patchUserMeValidation, patchUserAvatarValidation, userIdValidation } = require('../middlewares/validator');
 
 userRouter.get('/users/me', getUserMe);
 userRouter.get('/users', getUsers);
-userRouter.get('/users/:userId', getUser);
-userRouter.patch('/users/me', updateUser);
-userRouter.patch('/users/me/avatar', updateAvatar);
+userRouter.get('/users/:userId', userIdValidation, getUser);
+userRouter.patch('/users/me', patchUserMeValidation, updateUser);
+userRouter.patch('/users/me/avatar', patchUserAvatarValidation, updateAvatar);
 
 module.exports = { userRouter };

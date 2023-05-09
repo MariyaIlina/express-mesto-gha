@@ -10,9 +10,10 @@ const { cardRouter } = require('./routes/cards');
 
 app.use(express.json());
 const { login, createUser } = require('./controllers/users');
+const { signUpValidation, signInValidation } = require('./middlewares/validator');
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signin', signInValidation, login);
+app.post('/signup', signUpValidation, createUser);
 app.use(auth);
 
 app.use(userRouter);

@@ -1,99 +1,96 @@
 const Card = require('../models/cards');
+const NotFoundError = require('../errors/not-found-error');
+// const EmailError = require('../errors/email-error');
+const Unauthorized = require('../errors/unauthorized');
+const ValidationError = require('../errors/validation-error');
 
-const getCards = (req, res) => {
-  Card.find()
-    .populate('owner')
-    .then((cards) => {
-      res.send({ data: cards });
-    })
-    .catch(() => {
-      res.status(500).send({ message: 'Smth went wrong' });
-    });
+const getCards = async (req, res, next) => {
+  try {
+    const cards = await Card.find({});
+    res.status(200).send(cards);
+  } catch (err) {
+    next(err);
+  }
 };
 
-const createCard = (req, res) => {
-  const { name, link } = req.body;
-
-  Card.create({ name, link })
-    .then((card) => {
+const createCard = async (req, res, next) => {
+  try {
+    const { name, link } = req.body;
+    const ownerId = req.user._id;
+    if (!name || !link) {
+      throw new ValidationError('Поля "name" и "link" должны быть заполнены');
+    } else {
+      const card = await Card.create({ name, link, owner: ownerId });
       res.status(201).send({ data: card });
-    })
-    .catch((e) => {
-      if (e.name === 'ValidationError') {
-        const message = Object.values(e.errors)
-          .map((error) => error.message)
-          .join('; ');
-        res.status(400).send({ message });
-      } else {
-        res.status(500).send({ message: 'Smth went wrong' });
-      }
-    });
+    }
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      next(new ValidationError('Некорректные данные'));
+    } else {
+      next(err);
+    }
+  }
 };
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
+  const userId = req.user._id;
   const { cardId } = req.params;
-  Card.findByIdAndRemove(cardId)
+  Card.findOne({ _id: cardId })
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Card not found' });
-      } else {
-        res.send({ data: card });
+        throw new NotFoundError();
       }
+      if (card.owner.toString() !== userId) {
+        throw new Unauthorized('Карточка не принадлежит авторизованному пользователю');
+      }
+      return Card.findOneAndRemove({ _id: cardId });
     })
-    .catch((e) => {
-      if (e.name === 'CastError') {
-        res.status(400).send({ message: 'Invalid card id' });
-      } else {
-        res.status(500).send({ message: 'Smth went wrong' });
-      }
-    });
+    .then((card) => {
+      res.json({ deleteCard: card });
+    })
+    .catch(next);
 };
 
-const likeCard = async (req, res) => {
+const likeCard = async (req, res, next) => {
   const { cardId } = req.params;
   try {
-    const cardExist = await Card.exists({ _id: cardId });
-    if (!cardExist) {
-      res.status(404).send({ message: 'Card not found' });
-      return;
-    }
-    const card = await Card.findByIdAndUpdate(
+    // const { userId } = req.user._id;
+    const cardLike = await Card.findByIdAndUpdate(
       cardId,
       { $addToSet: { likes: req.user._id } },
       { new: true },
-    ).orFail(() => {
-      throw new Error('CastError');
-    });
-    res.send({ data: card });
+    );
+    if (cardLike) {
+      res.status(200).send({ cardLike });
+    } else {
+      throw new NotFoundError('Переданы некорректные данные');
+    }
   } catch (err) {
     if (err.name === 'CastError') {
-      res.status(400).send({ message: 'Invalid card id' });
+      next(new ValidationError('Невалидный id'));
     } else {
-      res.status(500).send({ message: 'Something went wrong' });
+      next(err);
     }
   }
 };
 
-const dislikeCard = async (req, res) => {
+const dislikeCard = async (req, res, next) => {
   const { cardId } = req.params;
   try {
-    const cardExist = await Card.exists({ _id: cardId });
-    if (!cardExist) {
-      res.status(404).send({ message: 'Card not found' });
-      return;
-    }
-    const card = await Card.findByIdAndUpdate(
+    const cardDisLike = await Card.findByIdAndUpdate(
       cardId,
       { $pull: { likes: req.user._id } },
       { new: true },
-    ).orFail(() => {
-      throw new Error('CastError');
-    });
-    res.send({ data: card });
+    );
+    if (cardDisLike) {
+      res.status(200).send({ cardDisLike });
+    } else {
+      throw new NotFoundError('Переданы некорректные данные');
+    }
   } catch (err) {
     if (err.name === 'CastError') {
-      res.status(400).send({ message: 'Invalid card id' });
+      next(new ValidationError('Невалидный id'));
     } else {
-      res.status(500).send({ message: 'Something went wrong' });
+      next(err);
     }
   }
 };

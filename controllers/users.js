@@ -5,7 +5,7 @@ const User = require('../models/users');
 const NotFoundError = require('../errors/not-found-error');
 const ValidationError = require('../errors/validation-error');
 const EmailError = require('../errors/email-error');
-const TokenError = require('../errors/token-error');
+const Unauthorized = require('../errors/unauthorized');
 
 const getUsers = (req, res, next) => {
   User.find()
@@ -36,7 +36,6 @@ const getUser = async (req, res, next) => {
 
 const getUserMe = async (req, res, next) => {
   const userId = req.user._id;
-  console.log('userId=>', userId);
   try {
     const user = await User.findById(userId);
     if (user) {
@@ -63,11 +62,11 @@ const createUser = async (req, res, next) => {
   } = req.body;
 
   if (!email || !password) {
-    next(new NotFoundError('Email or password is required'));
+    next(new NotFoundError('Email и password обязательные поля'));
   }
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    next(new NotFoundError('User with this email already exists'));
+    next(new NotFoundError('Пользователь с такими данными уже существует'));
   }
   try {
     const hash = await bcrypt.hash(password, 10);
@@ -76,14 +75,10 @@ const createUser = async (req, res, next) => {
         name, about, avatar, email, password: hash,
       },
     );
-    console.log('=>', user._id);
-    const objectId = user._id;
-    const idOnly = objectId.toString();
-    console.log(idOnly);
     if (user) {
       res.status(201).send(
         {
-          data: name, about, avatar, email, idOnly,
+          data: name, about, avatar, email,
         },
       );
     }
@@ -103,121 +98,72 @@ const login = (req, res, next) => {
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
-      res.cookie('token', token, { httpOnly: true }).send({ message: 'Всё верно!' });
-      console.log('token=>', token);
+      res.send({ token });
     })
     .catch(() => {
-      next(new TokenError('Ошибка авторизации: неправильный логин или пароль'));
+      next(new Unauthorized('Ошибка авторизации: неправильный логин или пароль'));
     });
 };
 
-// const updateUser = (req, res) => {
-//   const { _id } = req.user;
-//   const { name, about } = req.body;
+const updateUser = (req, res, next) => {
+  const { _id } = req.user;
+  const { name, about } = req.body;
 
-//   if (name && (name.length < 2 || name.length > 30)) {
-//     res
-//       .status(400)
-//       .send({ message: 'Name should be between 2 and 30 characters long' });
-//     return;
-//   }
-
-//   if (about && (about.length < 2 || about.length > 30)) {
-//     res
-//       .status(400)
-//       .send({ message: 'About should be between 2 and 30 characters long' });
-//     return;
-//   }
-
-//   const options = { new: true, omitUndefined: true, runValidators: true };
-
-//   if (
-//     (!name || name.length < 2 || name.length > 30)
-//   && (!about || about.length < 2 || about.length > 30)
-//   ) {
-//     res.status(400).send({
-//       message:
-//         'Name or About should be provided, and be between 2 and 30 characters long',
-//     });
-//     return;
-//   }
-
-//   User.findByIdAndUpdate(_id, { name, about }, options)
-//     .orFail(() => {
-//       throw new Error('Not found');
-//     })
-//     .then((user) => {
-//       res.send({ data: user });
-//     })
-//     .catch((e) => {
-//       if (e.name === 'CastError') {
-//         res.status(400).send({ message: 'ValidationError' });
-//       } else if (e.name === 'ValidationError') {
-//         const message = Object.values(e.errors)
-//           .map((err) => err.message)
-//           .join('; ');
-//         res.status(404).send({ message });
-//       } else if (e.message === 'Not found') {
-//         res.status(404).send({ message: 'Not found' });
-//       } else {
-//         res.status(500).send({ message: 'Smth went wrong' });
-//       }
-//     });
-// };
-const updateUser = async (req, res, next) => {
-  try {
-    const { name, about } = req.body;
-    console.log('req.body=>', name, about);
-    const opts = { new: true, runValidators: true };
-    if (!name || !about) {
-      throw new ValidationError('Поля "name" и "about" должно быть заполнены');
-    } else {
-      const ownerId = req.user._id;
-      console.log('ownerId=>', ownerId);
-      const userPatchMe = await User.findByIdAndUpdate(ownerId, { name, about }, opts);
-      if (userPatchMe) {
-        res.status(200).send({ data: userPatchMe });
-      } else {
-        throw new NotFoundError('Переданы некорректные данные');
-      }
-    }
-  } catch (err) {
-    if (err.name === 'ValidationError') {
-      next(new ValidationError('Некорректные данные'));
-    } else {
-      next(err);
-    }
+  if (name && (name.length < 2 || name.length > 30)) {
+    next(new ValidationError('Поле name должно быть от 2 до 30 символов'));
+    return;
   }
+
+  if (about && (about.length < 2 || about.length > 30)) {
+    next(new ValidationError('Поле about должно быть от 2 до 30 символов'));
+    return;
+  }
+
+  const options = { new: true, omitUndefined: true, runValidators: true };
+
+  if (
+    (!name || name.length < 2 || name.length > 30)
+  && (!about || about.length < 2 || about.length > 30)
+  ) {
+    next(new ValidationError('Поля name и about должны быть длинной от 2 до 30 символов'));
+  }
+  User.findByIdAndUpdate(_id, { name, about }, options)
+    .orFail(() => {
+      throw new NotFoundError('Пользователь не найден');
+    })
+    .then((user) => {
+      res.status(200).send({ user });
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ValidationError('Некорректные данные'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-const updateAvatar = (req, res) => {
+const updateAvatar = (req, res, next) => {
   const { _id } = req.user;
   const { avatar } = req.body;
   if (!avatar) {
-    res.status(400).send({ message: 'Avatar URL is required' });
+    next(new ValidationError('Поле avatar должно быть заполнено'));
     return;
   }
   const options = { new: true, omitUndefined: true, runValidators: true };
 
   User.findByIdAndUpdate(_id, { avatar }, options)
     .orFail(() => {
-      throw new Error('Not found');
+      throw new NotFoundError('Пользователь не найден');
     })
-    .then((user) => {
-      res.send({ data: user });
+    .then((avatarUpdate) => {
+      res.status(200).send({ avatarUpdate });
     })
-    .catch((e) => {
-      if (e.name === 'CastError') {
-        res.status(400).send({ message: 'ValidationError' });
-      } else if (e.name === 'ValidationError') {
-        const message = Object.values(e.errors)
-          .map((err) => err.message)
-          .join('; ');
-        res.status(404).send({ message });
-      } else if (e.message === 'Not found') {
-        res.status(404).send({ message: 'Not found' });
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ValidationError('Некорректные данные'));
       } else {
-        res.status(500).send({ message: 'Smth went wrong' });
+        next(err);
       }
     });
 };
