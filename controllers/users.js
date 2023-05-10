@@ -76,7 +76,7 @@ const createUser = async (req, res, next) => {
       },
     );
     if (user) {
-      res.status(201).send(
+      res.status(201).send.select('-password')(
         { user },
       );
     }

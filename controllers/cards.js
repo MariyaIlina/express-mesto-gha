@@ -19,7 +19,7 @@ const createCard = async (req, res, next) => {
     if (!name || !link) {
       throw new ValidationError('Поля "name" и "link" должны быть заполнены');
     } else {
-      const card = await Card.create({ name, link, owner: ownerId });
+      const card = await Card.create({ name, link, owner: ownerId});
       res.status(201).send({ data: card });
     }
   } catch (err) {

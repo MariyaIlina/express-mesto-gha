@@ -25,8 +25,6 @@ const userSchema = new mongoose.Schema({
       },
     ],
     required: [true, 'Требуется ссылка на аватар пользователя'],
-    // validator: (v) => validator.isURL(v),
-    // message: 'Некорректный URL',
   },
   email: {
     type: String,
