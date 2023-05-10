@@ -55,6 +55,7 @@ const getUserMe = async (req, res, next) => {
 const createUser = async (req, res, next) => {
   if (!req.body) {
     next(new NotFoundError('Invalid request body'));
+    return;
   }
 
   const {
@@ -63,10 +64,12 @@ const createUser = async (req, res, next) => {
 
   if (!email || !password) {
     next(new NotFoundError('Email и password обязательные поля'));
+    return;
   }
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     next(new EmailError('Пользователь с такими данными уже существует'));
+    return;
   }
   try {
     const hash = await bcrypt.hash(password, 10);
@@ -76,13 +79,12 @@ const createUser = async (req, res, next) => {
       },
     );
     if (user) {
-      res.status(201).send.select('-password')(
-        { user },
-      );
+      res.status(201).send({ user: user.select('-password') });
     }
   } catch (err) {
     if (err.name === 'ValidationError') {
       next(new ValidationError('Некоректные данные'));
+      return;
     } if (err.code === 11000) {
       next(new EmailError('Данный email уже существует в базе данных'));
     } else {
