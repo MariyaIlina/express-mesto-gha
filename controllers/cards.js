@@ -39,10 +39,10 @@ const deleteCard = (req, res, next) => {
   Card.findOneAndRemove({ _id: cardId })
     .then((card) => {
       if (!card) {
-        throw new DeleteCardError('Чужая карточка не может быть удалена');
+        throw new NotFoundError('Такой карточки нет в базе данных');
       }
       if (card.owner.toString() !== req.user._id) {
-        throw new Unauthorized();
+        throw new DeleteCardError('Чужая карточка не может быть удалена');
       }
       res.json({ card });
     })
