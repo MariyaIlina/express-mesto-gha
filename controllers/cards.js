@@ -1,7 +1,6 @@
 const Card = require('../models/cards');
 const NotFoundError = require('../errors/not-found-error');
 const DeleteCardError = require('../errors/delete-card-error');
-const Unauthorized = require('../errors/unauthorized');
 const ValidationError = require('../errors/validation-error');
 
 const getCards = async (req, res, next) => {
