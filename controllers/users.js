@@ -66,7 +66,7 @@ const createUser = async (req, res, next) => {
   }
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    next(new NotFoundError('Пользователь с такими данными уже существует'));
+    next(new EmailError('Пользователь с такими данными уже существует'));
   }
   try {
     const hash = await bcrypt.hash(password, 10);
@@ -77,9 +77,7 @@ const createUser = async (req, res, next) => {
     );
     if (user) {
       res.status(201).send(
-        {
-          data: name, about, avatar, email,
-        },
+        { user },
       );
     }
   } catch (err) {

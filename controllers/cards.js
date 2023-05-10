@@ -1,6 +1,6 @@
 const Card = require('../models/cards');
 const NotFoundError = require('../errors/not-found-error');
-// const EmailError = require('../errors/email-error');
+const DeleteCardError = require('../errors/delete-card-error');
 const Unauthorized = require('../errors/unauthorized');
 const ValidationError = require('../errors/validation-error');
 
@@ -40,11 +40,14 @@ const deleteCard = (req, res, next) => {
         throw new NotFoundError();
       }
       if (card.owner.toString() !== userId) {
-        throw new Unauthorized('Карточка не принадлежит авторизованному пользователю');
+        throw new DeleteCardError('Карточка не принадлежит авторизованному пользователю');
       }
       return Card.findOneAndRemove({ _id: cardId });
     })
     .then((card) => {
+      if (!card) {
+        throw new NotFoundError('Карточка не найдена');
+      }
       res.json({ deleteCard: card });
     })
     .catch(next);
@@ -53,7 +56,6 @@ const deleteCard = (req, res, next) => {
 const likeCard = async (req, res, next) => {
   const { cardId } = req.params;
   try {
-    // const { userId } = req.user._id;
     const cardLike = await Card.findByIdAndUpdate(
       cardId,
       { $addToSet: { likes: req.user._id } },

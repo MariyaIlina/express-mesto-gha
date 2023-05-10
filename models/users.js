@@ -6,22 +6,27 @@ const userSchema = new mongoose.Schema({
   name: {
     type: String,
     default: 'Жак-Ив Кусто',
-    minlength: [2, 'Минимальная длина поля "name" - 2'],
-    maxlength: [30, 'Максимальная длина поля "name" - 30'],
+    minlength: 2,
+    maxlength: 30,
   },
   about: {
     type: String,
     default: 'Исследователь',
-    minlength: [2, 'Минимальная длина поля "name" - 2'],
-    maxlength: [30, 'Максимальная длина поля "name" - 30'],
+    minlength: 2,
+    maxlength: 30,
   },
   avatar: {
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     type: String,
-    validate: {
-      validator: (v) => validator.isURL(v),
-      message: 'Некорректный URL',
-    },
+    validate: [
+      {
+        validator: (v) => /^https?:\/\/(?:www\.)?\w[\w\-.~:/?#[\]@!$&'()*+,;=]+(?:#\w+)?$/.test(v),
+        message: 'Неправильный адрес ссылки',
+      },
+    ],
+    required: [true, 'Требуется ссылка на аватар пользователя'],
+    // validator: (v) => validator.isURL(v),
+    // message: 'Некорректный URL',
   },
   email: {
     type: String,
