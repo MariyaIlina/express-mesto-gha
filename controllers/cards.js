@@ -2,6 +2,7 @@ const Card = require('../models/cards');
 const NotFoundError = require('../errors/not-found-error');
 const DeleteCardError = require('../errors/delete-card-error');
 const ValidationError = require('../errors/validation-error');
+const Unauthorized = require('../errors/unauthorized');
 
 const getCards = async (req, res, next) => {
   try {
@@ -35,16 +36,15 @@ const deleteCard = (req, res, next) => {
   console.log(userId);
   const { cardId } = req.params;
   console.log(cardId);
-  const ownerId = Card.findById(userId);
-  console.log('ownerId=>', ownerId);
-  Card.findById(cardId)
-    .orFail(() => new NotFoundError('Нет карточки по заданному id'))
+  Card.findOneAndRemove({ _id: cardId })
     .then((card) => {
-      if (card.owner !== userId) {
-        return next(new DeleteCardError('Чужая карточка не может быть удалена'));
+      if (!card) {
+        throw new DeleteCardError('Чужая карточка не может быть удалена');
       }
-      return Card.remove()
-        .then(() => res.status(200).send(card));
+      if (card.owner.toString() !== req.user._id) {
+        throw new Unauthorized();
+      }
+      res.json({ card });
     })
     .catch(next);
 };
