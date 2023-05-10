@@ -32,22 +32,19 @@ const createCard = async (req, res, next) => {
 };
 const deleteCard = (req, res, next) => {
   const userId = req.user._id;
+  console.log(userId);
   const { cardId } = req.params;
-  Card.findOne({ _id: cardId })
+  console.log(cardId);
+  const ownerId = Card.findById(userId);
+  console.log('ownerId=>', ownerId);
+  Card.findById(cardId)
+    .orFail(() => new NotFoundError('Нет карточки по заданному id'))
     .then((card) => {
-      if (!card) {
-        throw new NotFoundError();
+      if (card.owner !== userId) {
+        return next(new DeleteCardError('Чужая карточка не может быть удалена'));
       }
-      if (card.owner.toString() !== userId) {
-        throw new DeleteCardError('Карточка не принадлежит авторизованному пользователю');
-      }
-      return Card.findOneAndRemove({ _id: cardId });
-    })
-    .then((card) => {
-      if (!card) {
-        throw new NotFoundError('Карточка не найдена');
-      }
-      res.json({ deleteCard: card });
+      return Card.remove()
+        .then(() => res.status(200).send(card));
     })
     .catch(next);
 };

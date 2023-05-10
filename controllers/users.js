@@ -53,44 +53,43 @@ const getUserMe = async (req, res, next) => {
 };
 
 const createUser = async (req, res, next) => {
-  if (!req.body) {
-    next(new NotFoundError('Invalid request body'));
-    return;
-  }
-
   const {
     name, about, avatar, email, password,
   } = req.body;
-
   if (!email || !password) {
-    next(new NotFoundError('Email и password обязательные поля'));
-    return;
+    next(new ValidationError('Поля "email" и "password" должно быть заполнены'));
   }
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    next(new EmailError('Пользователь с такими данными уже существует'));
-    return;
-  }
-  try {
-    const hash = await bcrypt.hash(password, 10);
-    const user = await User.create(
-      {
-        name, about, avatar, email, password: hash,
-      },
-    );
-    if (user) {
-      res.status(201).send({ user: user.select('-password') });
-    }
-  } catch (err) {
-    if (err.name === 'ValidationError') {
-      next(new ValidationError('Некоректные данные'));
-      return;
-    } if (err.code === 11000) {
-      next(new EmailError('Данный email уже существует в базе данных'));
-    } else {
-      next(err);
-    }
-  }
+  bcrypt.hash(password, 10)
+    .then((hash) => {
+      User.create({
+        name,
+        about,
+        avatar,
+        email,
+        password: hash,
+      })
+        .then(() => {
+          res.status(200).send({
+            data: {
+              name,
+              about,
+              avatar,
+              email,
+            },
+          });
+        })
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            next(new ValidationError('Некорректные данные'));
+          }
+          if (err.code === 11000) {
+            next(new EmailError('Данный email уже существует в базе данных'));
+          } else {
+            next(err);
+          }
+        });
+    })
+    .catch(next);
 };
 
 const login = (req, res, next) => {
