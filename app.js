@@ -11,16 +11,17 @@ const { cardRouter } = require('./routes/cards');
 app.use(express.json());
 const { login, createUser } = require('./controllers/users');
 const { signUpValidation, signInValidation } = require('./middlewares/validator');
+const NotFoundError = require('./errors/not-found-error');
 
 app.post('/signin', signInValidation, login);
 app.post('/signup', signUpValidation, createUser);
 app.use(auth);
 
-app.use(userRouter);
-app.use(cardRouter);
+app.use('/users', userRouter);
+app.use('/cards', cardRouter);
 
-app.use('*', (req, res) => {
-  res.status(404).send({ message: 'Такая страница не существует' });
+app.use('*', (req, res, next) => {
+  next(new NotFoundError('Такая страница не существует'));
 });
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
