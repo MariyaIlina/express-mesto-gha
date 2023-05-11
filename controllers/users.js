@@ -5,6 +5,7 @@ const User = require('../models/users');
 const NotFoundError = require('../errors/not-found-error');
 const ValidationError = require('../errors/validation-error');
 const EmailError = require('../errors/email-error');
+const Unauthorized = require('../errors/unauthorized');
 
 const getUsers = (req, res, next) => {
   User.find()
@@ -86,6 +87,7 @@ const createUser = async (req, res, next) => {
     })
     .catch(next);
 };
+
 const login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
@@ -93,7 +95,9 @@ const login = (req, res, next) => {
       const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
       res.send({ token });
     })
-    .catch(next);
+    .catch(() => {
+      next(new Unauthorized('Неправильные почта или пароль'));
+    });
 };
 
 const updateUser = (req, res, next) => {
