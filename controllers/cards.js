@@ -31,10 +31,7 @@ const createCard = async (req, res, next) => {
   }
 };
 const deleteCard = (req, res, next) => {
-  const userId = req.user._id;
-  console.log(userId);
   const { cardId } = req.params;
-  console.log(cardId);
   Card.findOneAndRemove({ _id: cardId })
     .then((card) => {
       if (!card) {
