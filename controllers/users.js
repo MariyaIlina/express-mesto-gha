@@ -5,7 +5,6 @@ const User = require('../models/users');
 const NotFoundError = require('../errors/not-found-error');
 const ValidationError = require('../errors/validation-error');
 const EmailError = require('../errors/email-error');
-const Unauthorized = require('../errors/unauthorized');
 
 const getUsers = (req, res, next) => {
   User.find()
@@ -44,13 +43,10 @@ const getUserMe = async (req, res, next) => {
       throw new NotFoundError('Пользователь по указанному id не найден');
     }
   } catch (err) {
-    if (err.name === 'ValidationError') {
-      next(new ValidationError('Невалидный id'));
-    } else {
-      next(err);
-    }
+    next(err);
   }
 };
+
 const createUser = async (req, res, next) => {
   const {
     name, about, avatar, email, password,
@@ -77,8 +73,7 @@ const createUser = async (req, res, next) => {
         .catch((err) => {
           if (err.name === 'ValidationError') {
             next(new ValidationError('Некорректные данные'));
-          }
-          if (err.code === 11000) {
+          } else if (err.code === 11000) {
             next(new EmailError('Данный email уже существует в базе данных'));
           } else {
             next(err);
@@ -95,9 +90,7 @@ const login = (req, res, next) => {
       const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
       res.send({ token });
     })
-    .catch(() => {
-      next(new Unauthorized('Неправильные почта или пароль'));
-    });
+    .catch(next);
 };
 
 const updateUser = (req, res, next) => {
