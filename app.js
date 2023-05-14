@@ -2,9 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { errors } = require('celebrate');
 const auth = require('./middlewares/auth');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const { PORT = 3000 } = process.env;
 const app = express();
+app.use(requestLogger);
 const { userRouter } = require('./routes/users');
 const { cardRouter } = require('./routes/cards');
 
@@ -28,6 +30,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
   useNewUrlParser: true,
 });
 
+app.use(errorLogger);
 app.use(errors());
 
 app.use((err, req, res, next) => {
